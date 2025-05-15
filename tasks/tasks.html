@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Task Manager</title>
+</head>
+<body class="p-4">
+  <h2>My Tasks</h2>
+
+  <form id="task-form" class="mb-4">
+    <input type="hidden" id="task_id" />
+    <input type="text" id="title" class="form-control mb-2" placeholder="Task Title" required />
+    <textarea id="description" class="form-control mb-2" placeholder="Description"></textarea>
+    <button class="btn btn-success">Save Task</button>
+    <a href="/../logs/activity-logs.php" class="btn btn-secondary">All logs</a>
+  </form>
+
+  <ul id="task-list" class="list-group"></ul>
+
+  <script>
+    let isEditing = false;
+
+    async function fetchTasks() {
+      const res = await fetch('tasks.php');
+      const tasks = await res.json();
+      const list = document.getElementById('task-list');
+      list.innerHTML = '';
+
+      tasks.forEach(task => {
+        const li = document.createElement('li');
+        li.className = "list-group-item d-flex justify-content-between align-items-center";
+        li.innerHTML = `
+          <div>
+            <strong>${task.title}</strong><br>${task.description}
+          </div>
+          <div>
+            <button onclick="editTask(${task.task_id}, '${task.title}', '${task.description}')" class="btn btn-warning btn-sm mr-2">Edit</button>
+            <button onclick="deleteTask(${task.task_id})" class="btn btn-danger btn-sm">Delete</button>
+          </div>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    function editTask(id, title, description) {
+      document.getElementById('task_id').value = id;
+      document.getElementById('title').value = title;
+      document.getElementById('description').value = description;
+      isEditing = true;
+    }
+
+    document.getElementById('task-form').addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const taskId = document.getElementById('task_id').value;
+      const title = document.getElementById('title').value;
+      const description = document.getElementById('description').value;
+
+      if (isEditing && taskId) {
+        await fetch(`tasks.php?id=${taskId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, description })
+        });
+      } else {
+        await fetch('tasks.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, description })
+        });
+      }
+
+      e.target.reset();
+      document.getElementById('task_id').value = '';
+      isEditing = false;
+      fetchTasks();
+    });
+
+    async function deleteTask(id) {
+      await fetch(`tasks.php?id=${id}`, {
+        method: 'DELETE'
+      });
+      fetchTasks();
+    }
+
+    fetchTasks();
+  </script>
+</body>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+    background-color: #f5f7fa;
+    padding: 40px;
+    color: #333;
+}
+
+h2 {
+    margin-bottom: 20px;
+    font-size: 28px;
+    color: #2c3e50;
+}
+
+form {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+input[type="text"],
+textarea {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+input:focus,
+textarea:focus {
+    border-color: #3498db;
+    outline: none;
+}
+
+button,
+a.btn {
+    display: inline-block;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    margin-top: 10px;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: #fff;
+    margin-left: 10px;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+#task-list {
+    list-style: none;
+    padding: 0;
+}
+
+#task-list li {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    padding: 15px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+#task-list li:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+#task-list strong {
+    font-size: 16px;
+    color: #2c3e50;
+}
+
+#task-list button {
+    margin-left: 5px;
+}
+
+</style>
+</html>
